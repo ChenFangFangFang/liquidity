@@ -1,9 +1,20 @@
 package com.fintech.liquidity.core;
 
+import java.math.BigDecimal;
+
 public enum CurrencyPair {
-    EUR_USD,
-    GBP_USD,
-    USD_JPY;
+    EUR_USD(new BigDecimal("0.0001")),
+    GBP_USD(new BigDecimal("0.0001")),
+    USD_JPY(new BigDecimal("0.01"));
+
+    private final BigDecimal pipSize;
+    CurrencyPair(BigDecimal pipSize){
+        this.pipSize  = pipSize;
+    }
+
+    public BigDecimal getPipSize() {
+        return pipSize;
+    }
 
     @Override
     public String toString(){
