@@ -11,7 +11,9 @@
 
     <modules>
         <module>core-domain</module>
-        </modules>
+        <module>market-simulator</module>
+        <module>pricing-engine</module>
+        <module>client-gateway</module> </modules>
 
     <properties>
         <java.version>17</java.version>
