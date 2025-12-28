@@ -18,14 +18,14 @@ public class MarketSimulationService {
     }
 
     // Runs every 500ms
-    @Scheduled(fixedRate = 500)
+    // @Scheduled(fixedRate = 500)
     public void simulateFastProvider() {
         generateAndLogTick(CurrencyPair.EUR_USD, "LP_FAST");
         generateAndLogTick(CurrencyPair.USD_JPY, "LP_FAST");
     }
 
     // Runs every 3 seconds
-    @Scheduled(fixedRate = 3000)
+    // @Scheduled(fixedRate = 3000)
     public void simulateSlowProvide() {
         generateAndLogTick(CurrencyPair.EUR_USD, "LP_SLOW");
         generateAndLogTick(CurrencyPair.GBP_USD, "LP_SLOW");
