@@ -1,0 +1,43 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+h1 { margin: 0; font-size: 1.5rem; color: #fff; }
+
+.market-table { width: 100%; border-collapse: collapse; }
+.market-table th { text-align: left; padding: 12px; color: #888; border-bottom: 1px solid #333; }
+.market-table td { padding: 12px; border-bottom: 1px solid #2a2a2a; }
+
+.pair-text { font-weight: bold; color: #4caf50; }
+.price-text { font-family: 'Consolas', 'Monaco', monospace; font-size: 1.1rem; }
+
+/* Status Badges */
+.status-badge { padding: 5px 10px; background: #333; border-radius: 4px; font-size: 0.8rem; }
+.badge-live { background: #1b5e20; color: #4caf50; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+.badge-stale { background: #b71c1c; color: #ffcdd2; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+
+/* Stale Row Effect */
+.row-stale { background-color: #290000; transition: background-color 0.5s; }
+.row-live { transition: background-color 0.3s; }
