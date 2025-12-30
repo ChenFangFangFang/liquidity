@@ -9,6 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,22 +31,47 @@ public class PricingService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @KafkaListener(topics = INPUT_TOPIC, groupId = "pricing-engine-group")
-    public void onMarketTick(Tick incomingTick){
-        // update internal memory
-        marketState.computeIfAbsent(incomingTick.pair(),k -> new ConcurrentHashMap<>())
-                .put(incomingTick.source(),incomingTick);
+//    @KafkaListener(topics = INPUT_TOPIC, groupId = "pricing-engine-group")
+//    public void onMarketTick(Tick incomingTick){
+//        // update internal memory
+//        marketState.computeIfAbsent(incomingTick.pair(),k -> new ConcurrentHashMap<>())
+//                .put(incomingTick.source(),incomingTick);
+//
+//        var currentTicks = new ArrayList<>(marketState.get(incomingTick.pair()).values());
+//
+//        if (currentTicks.isEmpty()) return;
+//        try{
+//            Tick bestPrice = aggregator.aggregate(currentTicks);
+//            Tick clientPrice = marginService.applyMargin(bestPrice, new BigDecimal("1.5"));
+//            kafkaTemplate.send(OUTPUT_TOPIC, clientPrice.pair().name(), clientPrice);
+//            System.out.println("✅ [Clean Price] " + clientPrice.pair() + " | Bid: " + clientPrice.bid() + " | Ask: " + clientPrice.ask());
+//        }catch (Exception e){
+//            System.err.println("⚠️ Pricing Logic Skipped: " + e.getMessage());
+//        }
+//    }
+@KafkaListener(topics = "market.data.raw", groupId = "pricing-engine-group")
+public void onMessage(Tick rawTick) {
+    // 👇 ADD THIS PRINT AT THE VERY TOP
+    System.out.println("📥 [PRICING HIT] Raw Tick received: " + rawTick);
 
-        var currentTicks = new ArrayList<>(marketState.get(incomingTick.pair()).values());
+    try {
+        // Your logic...
+        BigDecimal bid = rawTick.bid().multiply(new BigDecimal("0.9995"));
+        BigDecimal ask = rawTick.ask().multiply(new BigDecimal("1.0005"));
 
-        if (currentTicks.isEmpty()) return;
-        try{
-            Tick bestPrice = aggregator.aggregate(currentTicks);
-            Tick clientPrice = marginService.applyMargin(bestPrice, new BigDecimal("1.5"));
-            kafkaTemplate.send(OUTPUT_TOPIC, clientPrice.pair().name(), clientPrice);
-            System.out.println("✅ [Clean Price] " + clientPrice.pair() + " | Bid: " + clientPrice.bid() + " | Ask: " + clientPrice.ask());
-        }catch (Exception e){
-            System.err.println("⚠️ Pricing Logic Skipped: " + e.getMessage());
-        }
+        Tick cleanTick = new Tick(
+                rawTick.pair(),
+                bid,
+                ask,
+                Instant.now(),
+                "LIQUIDITY_HUB"
+        );
+
+        kafkaTemplate.send("market.data.clean", cleanTick);
+        System.out.println("✅ [CLEAN] Published: " + cleanTick.pair());
+
+    } catch (Exception e) {
+        System.err.println("❌ Logic Error: " + e.getMessage());
     }
+}
 }
