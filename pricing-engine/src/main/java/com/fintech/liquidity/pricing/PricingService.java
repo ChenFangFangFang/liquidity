@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class PricingService {
@@ -22,33 +22,21 @@ public class PricingService {
     private final LiquidityAggregator aggregator;
     private final MarginService marginService;
     private final KafkaTemplate<String, Tick> kafkaTemplate;
+    private final PriceRepository priceRepository;
+    private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final Map<CurrencyPair, Map<String, Tick>> marketState = new ConcurrentHashMap<>();
 
 
-    public PricingService(LiquidityAggregator aggregator, MarginService marginService, KafkaTemplate<String, Tick> kafkaTemplate) {
+    public PricingService(LiquidityAggregator aggregator,
+                          MarginService marginService,
+                          KafkaTemplate<String, Tick> kafkaTemplate,
+                          PriceRepository priceRepository) {
         this.aggregator = aggregator;
         this.marginService = marginService;
         this.kafkaTemplate = kafkaTemplate;
+        this.priceRepository = priceRepository;
     }
 
-//    @KafkaListener(topics = INPUT_TOPIC, groupId = "pricing-engine-group")
-//    public void onMarketTick(Tick incomingTick){
-//        // update internal memory
-//        marketState.computeIfAbsent(incomingTick.pair(),k -> new ConcurrentHashMap<>())
-//                .put(incomingTick.source(),incomingTick);
-//
-//        var currentTicks = new ArrayList<>(marketState.get(incomingTick.pair()).values());
-//
-//        if (currentTicks.isEmpty()) return;
-//        try{
-//            Tick bestPrice = aggregator.aggregate(currentTicks);
-//            Tick clientPrice = marginService.applyMargin(bestPrice, new BigDecimal("1.5"));
-//            kafkaTemplate.send(OUTPUT_TOPIC, clientPrice.pair().name(), clientPrice);
-//            System.out.println("✅ [Clean Price] " + clientPrice.pair() + " | Bid: " + clientPrice.bid() + " | Ask: " + clientPrice.ask());
-//        }catch (Exception e){
-//            System.err.println("⚠️ Pricing Logic Skipped: " + e.getMessage());
-//        }
-//    }
 @KafkaListener(topics = "market.data.raw", groupId = "pricing-engine-group")
 public void onMessage(Tick rawTick) {
     // 👇 ADD THIS PRINT AT THE VERY TOP
@@ -69,6 +57,16 @@ public void onMessage(Tick rawTick) {
 
         kafkaTemplate.send("market.data.clean", cleanTick);
         System.out.println("✅ [CLEAN] Published: " + cleanTick.pair());
+        int currentCount = tickCounter.incrementAndGet();
+        if (currentCount % 10 == 0){
+            try{
+                PriceEntity entity = new PriceEntity(cleanTick);
+                priceRepository.save(entity);
+                System.out.println("💾 [DB SAVED] " + cleanTick.pair() + " (Tick #" + currentCount + ")");
+            }catch (Exception dbError){
+                System.err.println("❌ Database Error: " + dbError.getMessage());
+            }
+        }
 
     } catch (Exception e) {
         System.err.println("❌ Logic Error: " + e.getMessage());
