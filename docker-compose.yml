@@ -1,27 +1,44 @@
 version: '3.8'
+
+networks:
+  fintech-net:
+    driver: bridge
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
+    container_name: liquidity-hub-zookeeper
+    networks:
+      - fintech-net
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
+    container_name: liquidity-hub-kafka
+    hostname: kafka
     depends_on:
       - zookeeper
+    networks:
+      - fintech-net
     ports:
       - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      # IMPORTANT: Listen on 0.0.0.0 to accept external Docker traffic
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   postgres:
     image: postgres:15-alpine
     container_name: liquidity-hub-db
+    networks:
+      - fintech-net
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
@@ -31,5 +48,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pricing-engine:
+    # Use the simple JAR copy method we established earlier
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricing-engine
+    networks:
+      - fintech-net
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/liquidity_db
+      SPRING_DATASOURCE_PASSWORD: password123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
 volumes:
-  postgres_data: # Persist data even if container stops
+  postgres_data:

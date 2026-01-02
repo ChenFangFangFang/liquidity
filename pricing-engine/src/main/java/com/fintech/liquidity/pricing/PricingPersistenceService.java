@@ -8,9 +8,12 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PricingPersistenceService {
     private final PriceRepository priceRepository;
+
+    public PricingPersistenceService(PriceRepository priceRepository) {
+        this.priceRepository = priceRepository;
+    }
 
     @CircuitBreaker(name = "pricingDb", fallbackMethod = "fallbackSave")
     public void saveTick(Tick cleanTick, int count){
