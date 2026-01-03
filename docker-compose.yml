@@ -1,8 +1,6 @@
 version: '3.8'
 
-networks:
-  fintech-net:
-    driver: bridge
+
 
 services:
   zookeeper:
@@ -66,6 +64,25 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/liquidity_db
       SPRING_DATASOURCE_PASSWORD: password123
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+  client-gateway:
+    build:
+      context: client-gateway
+      dockerfile: Dockerfile
+    container_name: client-gateway
+    networks:
+      - fintech-net
+    ports:
+      - "8080:8080"
+    depends_on:
+      - pricing-engine
+      - kafka
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+networks:
+  fintech-net:
+    driver: bridge
 
 volumes:
   postgres_data:

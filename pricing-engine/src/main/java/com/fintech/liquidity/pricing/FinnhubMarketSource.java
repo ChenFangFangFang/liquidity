@@ -1,4 +1,4 @@
-package com.fintech.liquidity.market;
+package com.fintech.liquidity.pricing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -22,7 +22,6 @@ public class MarketDataBridge {
     public MarketDataBridge(SimpMessagingTemplate webSocket) {
         this.webSocket = webSocket;
     }
-
     @KafkaListener(topics = "market.data.clean", groupId = "client-gateway-group")
     public void consume(Tick tick){
         String pair = tick.pair().name();
@@ -32,7 +31,6 @@ public class MarketDataBridge {
         // 2. push to websocket for streaming
         webSocket.convertAndSend("/topic/prices", tick);
     }
-
     public Tick getLatestPrice(String pair){
         return latestPrices.get(pair);
     }
