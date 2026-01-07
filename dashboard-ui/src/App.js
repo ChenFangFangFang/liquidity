@@ -14,7 +14,7 @@ function App() {
         // 1. Configure the Client (The Modern Way)
         const client = new Client({
             // We use webSocketFactory for SockJS compatibility
-            webSocketFactory: () => new SockJS('http://localhost:8082/ws-market'),
+            webSocketFactory: () => new SockJS('http://localhost:8080/ws-market'),
 
             // Reconnect automatically if connection drops (every 5s)
             reconnectDelay: 5000,

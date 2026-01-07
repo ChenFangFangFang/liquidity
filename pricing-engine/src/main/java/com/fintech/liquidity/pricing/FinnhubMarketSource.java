@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.liquidity.core.CurrencyPair;
 import com.fintech.liquidity.core.Tick;
 import jakarta.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -21,11 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @Profile("prod")
 public class FinnhubMarketSource extends TextWebSocketHandler {
-    private static final String API_KEY = "d59pijpr01qgqlm1ovdgd59pijpr01qgqlm1ove0";
-    private static final String FINNHUB_URL = "wss://ws.finnhub.io?token=" + API_KEY;
     private final KafkaTemplate<String, Tick> kafkaTemplate;
     private final ObjectMapper jsonParser = new ObjectMapper();
     private final Map<String, CurrencyPair> symbolMap = new ConcurrentHashMap<>();
+    @Value("${finnhub.api.url}")
+    private String finnhubUrl;
+    @Value("${finnhub.api.key}")
+    private String finnhubApiKey;
 
     public FinnhubMarketSource(KafkaTemplate<String, Tick> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -39,9 +43,10 @@ public class FinnhubMarketSource extends TextWebSocketHandler {
     @PostConstruct
     public void connect(){
         System.out.println("🚀 Connecting to Finnhub FX Feed...");
+        String finnhubConfig = finnhubUrl + "?token=" + finnhubApiKey; 
         StandardWebSocketClient client = new StandardWebSocketClient();
         try{
-            client.doHandshake(this,FINNHUB_URL);
+            client.doHandshake(this,finnhubConfig);
         } catch (Exception e) {
             System.err.println("❌ Failed to connect to Finnhub: " + e.getMessage());
         }

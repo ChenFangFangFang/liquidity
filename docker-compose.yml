@@ -60,6 +60,8 @@ services:
     ports:
       - "8081:8081"
     environment:
+      FINNHUB_API_KEY: d59pijpr01qgqlm1ovdgd59pijpr01qgqlm1ove0
+      FINNHUB_API_URL: wss://ws.finnhub.io
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/liquidity_db
       SPRING_DATASOURCE_PASSWORD: password123
